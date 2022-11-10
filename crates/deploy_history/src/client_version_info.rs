@@ -1,6 +1,6 @@
 use anyhow::Context;
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{domain::BinaryType, domain::Channel};
 
@@ -11,6 +11,7 @@ struct ClientVersionResponse {
     client_version_upload: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ClientVersionInfo {
     pub channel: Channel,
     pub version_guid: String,
