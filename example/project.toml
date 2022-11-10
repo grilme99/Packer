@@ -1,0 +1,6 @@
+[game]
+place_id = 1234
+
+[branding]
+bar_color = "#fff"
+text_color = "#000"
