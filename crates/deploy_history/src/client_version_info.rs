@@ -2,7 +2,7 @@ use anyhow::Context;
 use reqwest::Client;
 use serde::Deserialize;
 
-use crate::{deploy_log::DeployLog, domain::BinaryType, domain::Channel};
+use crate::{domain::BinaryType, domain::Channel};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -13,24 +13,26 @@ struct ClientVersionResponse {
 
 pub struct ClientVersionInfo {
     pub channel: Channel,
-    pub version: String,
     pub version_guid: String,
+
+    pub major_rev: usize,
+    pub version: usize,
+    pub patch: usize,
+    pub change_list: usize,
 }
 
 impl ClientVersionInfo {
     pub fn new(channel: Channel, version: String, version_guid: String) -> Self {
+        let (major_rev, version, patch, change_list) = parts_from_version(&version);
+
         Self {
             channel,
-            version,
             version_guid,
-        }
-    }
 
-    pub fn from_deploy_log(log: DeployLog) -> Self {
-        Self {
-            channel: log.channel,
-            version: log.version_id(),
-            version_guid: log.version_guid,
+            major_rev,
+            version,
+            patch,
+            change_list,
         }
     }
 
@@ -52,10 +54,26 @@ impl ClientVersionInfo {
             .await
             .context("Failed to parse response for client version info into JSON")?;
 
+        let (major_rev, version, patch, change_list) = parts_from_version(&response.version);
+
         Ok(Self {
             channel: channel.to_owned(),
-            version: response.version,
             version_guid: response.client_version_upload,
+
+            major_rev,
+            version,
+            patch,
+            change_list,
         })
     }
+}
+
+fn parts_from_version(version: &str) -> (usize, usize, usize, usize) {
+    let mut version_parts = version.split(".");
+    let major_rev = version_parts.nth(0).expect("major rev").parse().unwrap();
+    let version = version_parts.nth(0).expect("major rev").parse().unwrap();
+    let patch = version_parts.nth(0).expect("major rev").parse().unwrap();
+    let change_list = version_parts.nth(0).expect("major rev").parse().unwrap();
+
+    (major_rev, version, patch, change_list)
 }

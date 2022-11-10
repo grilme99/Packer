@@ -110,6 +110,11 @@ dependencies = [
 [[package]]
 name = "client_bootstrapper"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reqwest",
+ "serde",
+]
 
 [[package]]
 name = "core-foundation"

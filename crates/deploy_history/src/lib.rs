@@ -10,7 +10,7 @@ pub mod client_version_info;
 pub mod deploy_log;
 pub mod domain;
 
-const LOG_PATTERN: &str = r"New (Studio6?4?) (version-.+) at (\d+/\d+/\d+ \d+:\d+:\d+ [A,P]M), file version: (\d+), (\d+), (\d+), (\d+)";
+const LOG_PATTERN: &str = r"New Client (version-.+) at (\d+/\d+/\d+ \d+:\d+:\d+ [A,P]M)";
 
 /// Pull raw deployment history from Roblox S3 bucket
 async fn get_deploy_history(client: &Client, channel: &Channel) -> anyhow::Result<String> {
@@ -35,38 +35,17 @@ fn get_logs_from_string(channel: &Channel, deploy_history: String) -> Vec<Deploy
 
     let mut logs = vec![];
     for capture in regex.captures_iter(&*deploy_history) {
-        let is_64_bit = capture[1].ends_with("64");
-        let version_guid = capture[2].to_string();
-        let timestamp = Date::parse(&capture[3], &format).unwrap();
-
-        let major_rev: usize = capture[4].parse().unwrap();
-        let version: usize = capture[5].parse().unwrap();
-        let patch: usize = capture[6].parse().unwrap();
-        let change_list: usize = capture[7].parse().unwrap();
+        let version_guid = capture[1].to_string();
+        let timestamp = Date::parse(&capture[2], &format).unwrap();
 
         let deploy_log = DeployLog {
             channel: channel.to_owned(),
 
-            is_64_bit,
             version_guid,
             timestamp,
-
-            major_rev,
-            version,
-            patch,
-            change_list,
         };
 
-        // We're only interested in including studio builds for the current CPU architecture, but
-        // only if we're not running tests
-        if cfg!(test) {
-            logs.push(deploy_log);
-        } else {
-            let running_x64 = cfg!(target_pointer_width = "64");
-            if (running_x64 && is_64_bit) || (!running_x64 && !is_64_bit) {
-                logs.push(deploy_log);
-            }
-        }
+        logs.push(deploy_log);
     }
 
     logs
@@ -94,11 +73,9 @@ pub async fn get_latest_deploy_log_for_channel(
         .await
         .context("Failed to get latest deploy logs")?;
 
-    let latest_log = deploy_logs.into_iter().find(|i| {
-        i.channel == *channel
-            && i.version_id() == version_info.version
-            && i.version_guid == version_info.version_guid
-    });
+    let latest_log = deploy_logs
+        .into_iter()
+        .find(|i| i.channel == *channel && i.version_guid == version_info.version_guid);
 
     Ok(latest_log)
 }
@@ -108,46 +85,32 @@ mod tests {
     use crate::{domain::Channel, get_logs_from_string};
 
     #[test]
-    fn captures_single_line_old_format() {
-        let test = "New Studio64 version-32f890bd512d4b6a at 4/19/2021 6:38:02 PM, file version: 0, 475, 0, 420862...Done!";
+    fn captures_multi_line() {
+        let test = "New RccService version-336605f55f6847b4 at 11/10/2009 3:35:29 PM... Done!
+        New RccService version-4fb818c8a9004e56 at 11/10/2009 11:32:43 PM... Done!
+        New Client version-133721681a5245bb at 11/10/2009 11:39:38 PM... Done!
+        New Client version-a00995fdd72842a2 at 11/11/2009 12:22:26 AM... Done!
+        New RccService version-0e918a958ffd4782 at 11/18/2009 1:24:07 AM... Done!
+        New RccService version-ddc196b8bcd249a5 at 11/25/2009 12:54:50 AM... Done!
+        New Client version-901e02f7d95046c7 at 11/25/2009 1:03:43 AM... Done!
+        New RccService version-7d5db4f118c04c32 at 12/4/2009 4:16:00 PM... New RccService version-0c5ffd6455e548fd at 12/5/2009 1:17:34 AM... Done!
+        New RccService version-c2266dad804f4be7 at 12/7/2009 12:57:29 PM... Done!
+        New RccService version-22f8550585f344fe at 12/11/2009 12:34:35 AM... Done!
+        New RccService version-80ab88f82c004848 at 12/17/2009 12:34:42 AM... Done!
+        New Client version-de75ac4e180244b4 at 12/17/2009 12:50:56 AM... Done!
+        New Client version-a10672c987274c2e at 12/19/2009 12:18:29 AM... Done!
+        New RccService version-ae2ebf93ac594514 at 1/8/2010 11:31:45 AM... Done!
+        New RccService version-18f76f9455204d6b at 1/8/2010 12:18:28 PM... Done!
+        New Client version-29d1896c5e90402b at 1/8/2010 1:16:46 PM... Done!";
+        let logs = get_logs_from_string(&Channel::Live, test.to_string());
+        assert_eq!(logs.len(), 6);
+    }
+
+    #[test]
+    fn captures_single_line() {
+        let test = "New Client version-133721681a5245bb at 11/10/2009 11:39:38 PM... Done!";
         let logs = get_logs_from_string(&Channel::Live, test.to_string());
         assert_eq!(logs.len(), 1);
-    }
-
-    #[test]
-    fn captures_multi_line_old_format() {
-        let test = "New Studio64 version-44076729f5ea4827 at 2/8/2021 4:18:10 PM, file version: 0, 465, 0, 417678...Done!\n
-New Studio64 version-44076729f5ea4827 at 2/8/2021 4:18:10 PM, file version: 0, 465, 0, 417678...Done!\n
-New Studio64 version-44076729f5ea4827 at 2/8/2021 4:18:10 PM, file version: 0, 465, 0, 417678...Done!\n
-New Studio64 version-44076729f5ea4827 at 2/8/2021 4:18:10 PM, file version: 0, 465, 0, 417678...Done!\n
-New Studio64 version-44076729f5ea4827 at 2/8/2021 4:18:10 PM, file version: 0, 465, 0, 417678...Done!";
-        let logs = get_logs_from_string(&Channel::Live, test.to_string());
-        assert_eq!(logs.len(), 5);
-    }
-
-    #[test]
-    fn captures_single_line_new_format() {
-        let test = "New Studio64 version-a357245614884bf5 at 5/26/2021 2:24:55 PM, file version: 0, 480, 1, 423489, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...";
-        let logs = get_logs_from_string(&Channel::Live, test.to_string());
-        assert_eq!(logs.len(), 1);
-    }
-
-    #[test]
-    fn captures_multi_line_new_format() {
-        let test = "New Studio64 version-a357245614884bf5 at 5/26/2021 2:24:55 PM, file version: 0, 480, 1, 423489, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio version-a9bf28344668488d at 5/28/2021 3:05:57 PM, file version: 0, 481, 0, 423686, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio64 version-04ce9261158d4b0f at 5/28/2021 3:06:54 PM, file version: 0, 481, 0, 423686, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio version-1eff506b67a94c05 at 5/28/2021 3:17:17 PM, file version: 0, 481, 0, 423686, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio64 version-8444aba87ee74d93 at 5/28/2021 3:18:16 PM, file version: 0, 481, 0, 423686, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio version-6a089dcca5644f8e at 6/3/2021 11:56:25 AM, file version: 0, 481, 1, 423973, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio64 version-a7431ddc8dfe4a7d at 6/3/2021 11:57:24 AM, file version: 0, 481, 1, 423973, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio version-348f7d9c46cd4892 at 6/3/2021 12:02:45 PM, file version: 0, 481, 1, 423973, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio64 version-f8db636ab0834da8 at 6/3/2021 12:03:55 PM, file version: 0, 481, 1, 423973, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio version-c2037653e0a446ac at 6/7/2021 4:26:20 PM, file version: 0, 482, 0, 424268, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio64 version-51bb1cea7fd9483a at 6/7/2021 4:27:10 PM, file version: 0, 482, 0, 424268, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...\n
-New Studio version-879389fd96a942b1 at 6/7/2021 4:33:52 PM, file version: 0, 482, 0, 424268, git hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ...";
-        let logs = get_logs_from_string(&Channel::Live, test.to_string());
-        assert_eq!(logs.len(), 12);
     }
 
     #[test]
