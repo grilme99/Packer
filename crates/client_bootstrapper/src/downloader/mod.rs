@@ -1,13 +1,16 @@
+use std::path::PathBuf;
+
 use anyhow::Context;
-use deploy_history::{
-    client_version_info::ClientVersionInfo,
-    domain::{BinaryType, Channel},
-};
+use deploy_history::client_version_info::ClientVersionInfo;
 use reqwest::Client;
 
+use crate::downloader::target::ClientDownloader;
+
 use self::client_lock::ClientLock;
+use self::target::Downloader;
 
 mod client_lock;
+mod target;
 
 /// Stateful object that handles the actual downloading of the Roblox client.
 ///
@@ -33,6 +36,31 @@ impl<'a> DownloadContext<'a> {
         }
     }
 
+    /// Start downloading the client! This mostly branches out to OS-specific download
+    /// implementations because Roblox packages the client up different for Windows and Mac.
+    pub async fn initiate_client_download(&mut self, write_to: &PathBuf) -> anyhow::Result<()> {
+        let latest_version = self
+            .get_latest_client_version()
+            .await
+            .context("Failed to get latest client version")?;
+
+        let download_paths = Downloader::get_file_download_paths(self.client, &latest_version)
+            .await
+            .context("Failed to get client download paths")?;
+
+        log::debug!("Got download paths:\n{}", download_paths.join(",\n"));
+
+        Downloader::download_files_and_write_to_path(self.client, download_paths, write_to)
+            .await
+            .context("Failed to download files or write to path")?;
+
+        self.update_client_lock()
+            .await
+            .context("Failed to update client.lock")?;
+
+        Ok(())
+    }
+
     /// Works out if we need to download a new version of the client.
     /// A new download could be required when:
     ///  1. Could not find an existing client downloaded.
@@ -47,10 +75,15 @@ impl<'a> DownloadContext<'a> {
             .context("Failed to get latest client version")?;
 
         if let Some(client_lock) = &self.client_lock {
-            // FIXME: Roblox version strings don't follow semver rules, which makes comparing
-            //  versions a bit of a pain. This check doesn't account for emergency patches or
-            //  the `change_list` property (unsure what change_list actually means).
-            if client_lock.version.version != latest_version.version {
+            // Roblox version strings don't follow semver rules, which makes comparing
+            // versions a bit of a pain. This is probably the most robust way to do it.
+            // Will also catch cases where we're somehow ahead of the latest client
+            // version (maybe we downloaded a test branch?).
+            let lock_version = &client_lock.version;
+            if lock_version.version != latest_version.version
+                || lock_version.patch != latest_version.patch
+                || lock_version.change_list != latest_version.change_list
+            {
                 return Ok(true);
             }
         } else {
@@ -73,7 +106,9 @@ impl<'a> DownloadContext<'a> {
             version: latest_version,
         };
 
-        new_lock.write_lock_to_path(&new_lock).context("Failed to write new ClientLock to path")?;
+        new_lock
+            .write_lock_to_path(&new_lock)
+            .context("Failed to write new ClientLock to path")?;
 
         self.client_lock = Some(new_lock);
 
@@ -89,10 +124,9 @@ impl<'a> DownloadContext<'a> {
             log::debug!("Missed cached client version info");
 
             // FIXME: Parse the correct `BinaryType`.
-            let version_info =
-                ClientVersionInfo::get(self.client, &Channel::Live, &BinaryType::MacPlayer)
-                    .await
-                    .context("Failed to get latest version info")?;
+            let version_info = Downloader::get_latest_client_version(self.client)
+                .await
+                .context("Failed to get latest client version")?;
 
             // FIXME PERF: Don't clone here.
             self.cached_client_version = Some(version_info.clone());

@@ -34,7 +34,7 @@ impl ClientLock {
 
 fn get_lock_path() -> anyhow::Result<PathBuf> {
     let current_dir = env::current_dir().context("Failed to get current directory")?;
-    let lock_path = current_dir.join("client.lock");
+    let lock_path = current_dir.join("client/client.lock");
 
     Ok(lock_path)
 }

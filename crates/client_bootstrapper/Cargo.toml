@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-deploy_history = { path = "../deploy_history" }
-
 anyhow = "1.0.66"
+async-trait = "0.1.58"
+deploy_history = { path = "../deploy_history" }
+futures = "0.3.25"
+log = "0.4.17"
 reqwest = { version = "0.11.12", features = ["json"] }
 serde = { version = "1.0.147", features = ["derive"] }
+sha256 = "1.1.1"
 toml = "0.5.9"
-log = "0.4.17"
+zip = "0.6.3"

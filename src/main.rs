@@ -18,8 +18,10 @@ async fn main() -> anyhow::Result<()> {
 
     log::info!("Download required: {download_required}");
     if download_required {
+        let write_to = std::env::current_dir().unwrap().join("client/");
+
         project
-            .initiate_client_download()
+            .initiate_client_download(&write_to)
             .await
             .context("Failed to initiate client download")?;
     }

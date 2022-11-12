@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Context;
 use reqwest::Client;
 
@@ -11,7 +13,6 @@ pub mod manifest;
 pub struct Project<'a> {
     pub manifest: ProjectManifest,
     download_context: DownloadContext<'a>,
-    client: &'a Client,
 }
 
 impl<'a> Project<'a> {
@@ -22,7 +23,6 @@ impl<'a> Project<'a> {
 
         Ok(Self {
             manifest,
-            client,
             download_context,
         })
     }
@@ -33,12 +33,7 @@ impl<'a> Project<'a> {
     }
 
     /// Start downloading the client!
-    pub async fn initiate_client_download(&mut self) -> anyhow::Result<()> {
-        self.download_context
-            .update_client_lock()
-            .await
-            .context("Failed to update client lock")?;
-
-        Ok(())
+    pub async fn initiate_client_download(&mut self, write_to: &PathBuf) -> anyhow::Result<()> {
+        self.download_context.initiate_client_download(write_to).await
     }
 }
