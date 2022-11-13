@@ -1,7 +1,12 @@
 [package]
 name = "standalone-test"
+description = "Release Roblox games as standalone binaries!"
 version = "0.1.0"
 edition = "2021"
+
+[package.metadata.bundle]
+name = "Baseplate"
+identifier = "io.github.grilme99.standalonetest"
 
 [workspace]
 members = ["crates/*"]

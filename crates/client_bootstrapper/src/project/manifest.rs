@@ -24,7 +24,10 @@ impl ProjectManifest {
     pub fn get() -> anyhow::Result<ProjectManifest> {
         let manifest_path = get_manifest_path().context("Failed to get manifest path")?;
 
-        let manifest = fs::read_to_string(manifest_path).context("Failed to read manifest.toml")?;
+        let manifest = fs::read_to_string(&manifest_path).context(format!(
+            "Failed to read manifest.toml at path {manifest_path:?}"
+        ))?;
+
         let manifest = toml::from_str::<ProjectManifest>(&manifest)
             .context("Failed to parse manifest.toml to Manifest format")?;
 
