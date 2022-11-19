@@ -18,6 +18,10 @@ anyhow = "1.0.66"
 clap = { version = "4.0.22", features = ["derive"] }
 reqwest = { version = "0.11.12", features = ["json"] }
 serde = { version = "1.0.147", features = ["derive"] }
-tokio = { version = "1.21.2", features = ["full"] }
 log = "0.4.17"
 env_logger = "0.9.3"
+futures-lite = "1.12.0"
+tokio = { version = "1.21.2", features = ["full"] }
+
+[features]
+devtools = ["client_bootstrapper/devtools"]

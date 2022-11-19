@@ -1,56 +1,61 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Context;
 use deploy_history::client_version_info::ClientVersionInfo;
 use reqwest::Client;
 
-use crate::downloader::target::ClientDownloader;
+use crate::downloader::platform_impl::ClientDownloader;
 
 use self::client_lock::ClientLock;
-use self::target::Downloader;
+use self::platform_impl::Downloader;
 
 mod client_lock;
-mod target;
+mod platform_impl;
 
 /// Stateful object that handles the actual downloading of the Roblox client.
 ///
 /// Tracks and reports progress of any asynchronous download tasks.
 #[derive(Debug)]
-pub struct DownloadContext<'a> {
+pub struct DownloadContext {
     pub client_lock: Option<ClientLock>,
-    client: &'a Client,
+    client: Client,
     /// Cached latest client version. Saved lazily.
     cached_client_version: Option<ClientVersionInfo>,
 }
 
-impl<'a> DownloadContext<'a> {
-    pub fn new(client: &'a Client) -> Self {
+impl DownloadContext {
+    pub fn new() -> anyhow::Result<Self> {
         // FIXME: Eating the error like this silences any parsing errors which could be helpful.
         let client_lock = ClientLock::get().ok();
         log::debug!("Existing client.lock: {client_lock:?}");
 
-        Self {
+        let client = Client::builder()
+            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
+            .referer(false)
+            .build()?;
+
+        Ok(Self {
             client,
             client_lock,
             cached_client_version: None,
-        }
+        })
     }
 
     /// Start downloading the client! This mostly branches out to OS-specific download
     /// implementations because Roblox packages the client up different for Windows and Mac.
-    pub async fn initiate_client_download(&mut self, write_to: &PathBuf) -> anyhow::Result<()> {
+    pub async fn initiate_client_download(&mut self, write_to: &Path) -> anyhow::Result<()> {
         let latest_version = self
             .get_latest_client_version()
             .await
             .context("Failed to get latest client version")?;
 
-        let download_paths = Downloader::get_file_download_paths(self.client, &latest_version)
+        let download_paths = Downloader::get_file_download_paths(&self.client, &latest_version)
             .await
             .context("Failed to get client download paths")?;
 
         log::debug!("Got download paths:\n{}", download_paths.join(",\n"));
 
-        Downloader::download_files_and_write_to_path(self.client, download_paths, write_to)
+        Downloader::download_files_and_write_to_path(&self.client, download_paths, write_to)
             .await
             .context("Failed to download files or write to path")?;
 
@@ -124,7 +129,7 @@ impl<'a> DownloadContext<'a> {
             log::debug!("Missed cached client version info");
 
             // FIXME: Parse the correct `BinaryType`.
-            let version_info = Downloader::get_latest_client_version(self.client)
+            let version_info = Downloader::get_latest_client_version(&self.client)
                 .await
                 .context("Failed to get latest client version")?;
 

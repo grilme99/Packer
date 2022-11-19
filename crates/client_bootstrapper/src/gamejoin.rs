@@ -12,19 +12,24 @@ use crate::authentication::AuthenticationContext;
 /// Handles everything around negotiating the game joining process with Roblox (getting an authentication
 /// ticket, etc).
 #[derive(Debug)]
-pub struct GamejoinContext<'a> {
-    client: &'a Client,
+pub struct GamejoinContext {
+    client: Client,
     auth_context: AuthenticationContext,
 }
 
-impl<'a> GamejoinContext<'a> {
-    pub fn new(client: &'a Client) -> Self {
+impl GamejoinContext {
+    pub fn new() -> anyhow::Result<Self> {
         let auth_context = AuthenticationContext::new();
 
-        Self {
+        let client = Client::builder()
+            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
+            .referer(false)
+            .build()?;
+
+        Ok(Self {
             client,
             auth_context,
-        }
+        })
     }
 
     /// Launch the game client into the specified experience!
@@ -33,6 +38,7 @@ impl<'a> GamejoinContext<'a> {
         place_id: &u64,
         client_root: &Path,
     ) -> anyhow::Result<()> {
+        // FIXME: Assumes we're on MacOS.
         let roblox_player = client_root.join("Contents/MacOS/RobloxPlayer");
 
         if !roblox_player.exists() {
