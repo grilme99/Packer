@@ -17,6 +17,7 @@ reqwest = { version = "0.11.12", features = ["json", "cookies"] }
 secrecy = "0.8.0"
 serde = { version = "1.0.147", features = ["derive"] }
 sha256 = "1.1.1"
+sysinfo = "0.26.7"
 tokio = { version = "1.21.2", features = ["full"] }
 toml = "0.5.9"
 wry = { version = "0.22", features = ["transparent", "dox", "protocol"], default-features = false }

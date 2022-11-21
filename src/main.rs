@@ -1,7 +1,9 @@
 use std::{sync::mpsc, thread};
 
 use anyhow::Context;
-use client_bootstrapper::{application::Application, async_runtime::initiate_application_tasks};
+use client_bootstrapper::{
+    application::Application, async_runtime::initiate_application_tasks, manifest::ProjectManifest,
+};
 use env_logger::Env;
 
 fn main() -> anyhow::Result<()> {
@@ -11,19 +13,21 @@ fn main() -> anyhow::Result<()> {
     let root = std::env::current_dir().unwrap();
     log::info!("Root directory: {root:?}");
 
-    let (async_proc_input_tx, async_proc_input_rx) = mpsc::channel();
+    let manifest = ProjectManifest::get().context("Failed to get project manifest")?;
+
+    let (async_proc_input_tx, _async_proc_input_rx) = mpsc::channel();
     let (async_proc_output_tx, async_proc_output_rx) = mpsc::channel();
 
     // Drive the async thread
     let client_dir = root.join("client/");
 
+    let async_manifest = manifest.clone();
     thread::spawn(move || {
-        println!("AAAA");
-        initiate_application_tasks(&client_dir, async_proc_output_tx)
+        initiate_application_tasks(&client_dir, async_proc_output_tx, &async_manifest)
             .expect("async thread panicked");
     });
 
-    let application = Application::new(&root).context("Failed to create project")?;
+    let application = Application::new(&root, &manifest).context("Failed to create project")?;
     application
         .run(async_proc_input_tx, async_proc_output_rx)
         .context("Failed to create and run application")?;

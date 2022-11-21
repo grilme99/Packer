@@ -172,7 +172,8 @@
     }
 
     #status {
-      display: block;
+      /* display: block; */
+      display: none;
 
       width: 100%;
       height: 22px;
@@ -235,16 +236,18 @@
 
       const statusText = getStatusText(task)
       const element = document.getElementById("status_text")
-      element.innerText = statusText
+      element.innerText = statusText + "..."
     }
 
     function getStatusText(task) {
       if (task === "CheckingForUpdates") {
         return "Checking for Updates"
-      } else if (task === "UpdatingClient") {
-        return "Updating Client"
-      } else if (task === "LoadingGame") {
-        return "Loading Game"
+      } else if (task === "DownloadingClient") {
+        return "Downloading Client"
+      } else if (task === "PreparingFiles") {
+        return "Preparing Files"
+      } else if (task === "LaunchingGame") {
+        return "Launching Game"
       }
     }
 

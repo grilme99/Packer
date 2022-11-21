@@ -60,7 +60,12 @@ impl ClientDownloader for MacDownloader {
 
         let mut download_tasks = Vec::new();
         for download_path in &download_paths {
-            download_tasks.push(download_file(client, download_path, &temp_dir, TARGET_CONCURRENT_DOWNLOADS))
+            download_tasks.push(download_file(
+                client,
+                download_path,
+                &temp_dir,
+                TARGET_CONCURRENT_DOWNLOADS,
+            ))
         }
 
         let client_files = future::try_join_all(download_tasks)

@@ -3,19 +3,19 @@ use std::{env, fs, path::PathBuf};
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ProjectManifest {
     pub game: GameConfig,
     pub branding: BrandingConfig,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GameConfig {
     pub name: String,
-    pub place_id: u32,
+    pub place_id: u64,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BrandingConfig {
     pub bar_color: String,
     pub text_color: String,

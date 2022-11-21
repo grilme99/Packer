@@ -4,7 +4,7 @@ use std::{
     sync::{
         mpsc::{Receiver, Sender},
         Arc, Mutex,
-    }
+    },
 };
 
 use anyhow::Context;
@@ -24,11 +24,7 @@ use wry::{
     webview::{WebContext, WebViewBuilder},
 };
 
-use crate::async_runtime::Message;
-
-use self::manifest::ProjectManifest;
-
-pub mod manifest;
+use crate::{async_runtime::Message, manifest::ProjectManifest};
 
 const WINDOW_WIDTH: u32 = 600;
 const WINDOW_HEIGHT: u32 = 300;
@@ -37,15 +33,12 @@ const WINDOW_HEIGHT: u32 = 300;
 enum UserEvent {}
 
 pub struct Application<'a> {
-    pub manifest: ProjectManifest,
-
+    manifest: &'a ProjectManifest,
     root_path: &'a Path,
 }
 
 impl<'a> Application<'a> {
-    pub fn new(root_path: &'a Path) -> anyhow::Result<Self> {
-        let manifest = ProjectManifest::get().context("Failed to get manifest contents")?;
-
+    pub fn new(root_path: &'a Path, manifest: &'a ProjectManifest) -> anyhow::Result<Self> {
         Ok(Self {
             manifest,
             root_path,

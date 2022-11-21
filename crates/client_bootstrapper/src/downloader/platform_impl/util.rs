@@ -53,6 +53,7 @@ pub async fn download_file(
 
     log::debug!("Download chunks for {url}: {}", range_iter.clone().count());
 
+    // Make a list of all async download jobs and await them all together
     let mut download_tasks = Vec::new();
     for range in range_iter {
         download_tasks.push(download_partial_chunk(client, url, range));

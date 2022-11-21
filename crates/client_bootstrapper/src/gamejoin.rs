@@ -1,4 +1,4 @@
-use std::{path::Path, process::Command};
+use std::{path::Path, process::{Command, Stdio}};
 
 use anyhow::{bail, Context};
 use rand::{thread_rng, Rng};
@@ -56,11 +56,16 @@ impl GamejoinContext {
             .await
             .context("Failed to generate application args")?;
 
-        Command::new(roblox_player)
+        let handle = Command::new(roblox_player)
             .args(application_args)
-            .output()
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .stdin(Stdio::null())
+            .spawn()
             .context("Failed to launch RobloxPlayer")?;
 
+        drop(handle);
+        
         Ok(())
     }
 

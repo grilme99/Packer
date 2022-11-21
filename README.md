@@ -8,7 +8,7 @@
 
 # `📦 Packer`
 
-**Distribute Roblox games as standalone executables -- No existing client necessary.**
+**Distribute Roblox games as standalone executables.**
 
 </div>
 
