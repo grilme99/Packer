@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ProjectManifest {
     pub game: GameConfig,
-    pub branding: BrandingConfig,
+    pub design: DesignConfig,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -16,9 +16,9 @@ pub struct GameConfig {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct BrandingConfig {
-    pub bar_color: String,
-    pub text_color: String,
+pub struct DesignConfig {
+    pub width: u32,
+    pub height: u32,
 }
 
 impl ProjectManifest {

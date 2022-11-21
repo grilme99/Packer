@@ -26,9 +26,6 @@ use wry::{
 
 use crate::{async_runtime::Message, manifest::ProjectManifest};
 
-const WINDOW_WIDTH: u32 = 600;
-const WINDOW_HEIGHT: u32 = 300;
-
 #[derive(Debug)]
 enum UserEvent {}
 
@@ -69,13 +66,16 @@ impl<'a> Application<'a> {
         );
         menu.add_submenu("File", true, file_menu);
 
+        let window_width = self.manifest.design.width;
+        let window_height = self.manifest.design.height;
+
         let window = WindowBuilder::new()
             .with_always_on_top(true)
             .with_decorations(false)
             .with_has_shadow(true)
             .with_movable_by_window_background(true)
-            .with_inner_size(LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT))
-            .with_max_inner_size(LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT))
+            .with_inner_size(LogicalSize::new(window_width, window_height))
+            .with_max_inner_size(LogicalSize::new(window_width, window_height))
             .with_menu(menu)
             // There are actually three layer of background color when creating WebView window.
             // The first is window background...
@@ -158,8 +158,8 @@ impl<'a> Application<'a> {
                     );
 
                     window.set_outer_position(PhysicalPosition::new(
-                        (size.width / 2) - (WINDOW_WIDTH),
-                        (size.height / 2) - (WINDOW_HEIGHT),
+                        (size.width / 2) - (window_width),
+                        (size.height / 2) - (window_height),
                     ));
 
                     log::info!("Application started successfully");
