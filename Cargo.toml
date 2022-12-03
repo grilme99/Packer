@@ -1,5 +1,5 @@
 [package]
-name = "standalone-test"
+name = "packer"
 description = "Release Roblox games as standalone binaries!"
 version = "0.1.0"
 edition = "2021"
@@ -15,6 +15,9 @@ resources = ["examples/the-wild-west"]
 
 [workspace]
 members = ["crates/*"]
+
+[lib]
+name = "libpacker"
 
 [dependencies]
 client_bootstrapper = { path = "crates/client_bootstrapper" }

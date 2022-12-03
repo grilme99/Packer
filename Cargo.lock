@@ -1834,6 +1834,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
 
 [[package]]
+name = "packer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 4.0.22",
+ "client_bootstrapper",
+ "env_logger",
+ "futures-lite",
+ "log",
+ "reqwest",
+ "serde",
+ "tokio",
+]
+
+[[package]]
 name = "pango"
 version = "0.15.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2711,21 +2726,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "standalone-test"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.0.22",
- "client_bootstrapper",
- "env_logger",
- "futures-lite",
- "log",
- "reqwest",
- "serde",
- "tokio",
-]
 
 [[package]]
 name = "standback"

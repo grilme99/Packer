@@ -1,30 +1,32 @@
 use std::{sync::mpsc, thread};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use client_bootstrapper::{
     application::Application, async_runtime::initiate_application_tasks, manifest::ProjectManifest,
 };
 use env_logger::Env;
 
+use libpacker::util::get_root_directory;
+
 fn main() -> anyhow::Result<()> {
     let env = Env::default().filter_or("RUST_LOG", "debug");
     env_logger::init_from_env(env);
 
-    let root = std::env::current_exe()
-        .unwrap()
-        .join("../")
-        .canonicalize()
-        .unwrap();
+    let root_directory = get_root_directory().context("Failed to get current directory")?;
+    if !root_directory.exists() {
+        bail!("Root directory does not exist: {root_directory:?}")
+    }
 
-    log::info!("Root directory: {root:?}");
+    log::info!("Root directory: {root_directory:?}");
 
-    let manifest = ProjectManifest::get(&root).context("Failed to get project manifest")?;
+    let manifest =
+        ProjectManifest::get(&root_directory).context("Failed to get project manifest")?;
 
     let (async_proc_input_tx, _async_proc_input_rx) = mpsc::channel();
     let (async_proc_output_tx, async_proc_output_rx) = mpsc::channel();
 
     // Drive the async thread
-    let client_dir = root.to_owned();
+    let client_dir = root_directory.to_owned();
 
     let async_manifest = manifest.clone();
     thread::spawn(move || {
@@ -32,7 +34,8 @@ fn main() -> anyhow::Result<()> {
             .expect("async thread panicked");
     });
 
-    let application = Application::new(&root, &manifest).context("Failed to create project")?;
+    let application =
+        Application::new(&root_directory, &manifest).context("Failed to create project")?;
     application
         .run(async_proc_input_tx, async_proc_output_rx)
         .context("Failed to create and run application")?;
