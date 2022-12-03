@@ -31,14 +31,14 @@ impl ToString for Message {
 /// updated.
 #[tokio::main]
 pub async fn initiate_application_tasks(
-    client_dir: &Path,
+    root_dir: &Path,
     output_tx: Sender<Message>,
     manifest: &ProjectManifest,
 ) -> anyhow::Result<()> {
     log::info!("Initiated async application tasks");
 
     let mut download_context =
-        DownloadContext::new().context("Failed to construct DownloadContext")?;
+        DownloadContext::new(root_dir).context("Failed to construct DownloadContext")?;
     let gamejoin_context = GamejoinContext::new().context("Failed to construct GamejoinContext")?;
 
     log::info!("Checking for updates");
@@ -54,7 +54,7 @@ pub async fn initiate_application_tasks(
         output_tx.send(Message::DownloadingClient)?;
 
         download_context
-            .initiate_client_download(client_dir)
+            .initiate_client_download(root_dir)
             .await
             .context("Failed to update client")?;
     }
@@ -66,7 +66,7 @@ pub async fn initiate_application_tasks(
     let place_id = &manifest.game.place_id;
     gamejoin_context
         // FIXME: This is coupled to MacOS.
-        .launch_roblox_client(place_id, &client_dir.join("RobloxPlayer.app"))
+        .launch_roblox_client(place_id, &root_dir.join("client/RobloxPlayer.app"))
         .await
         .context("Failed to launch Roblox client")?;
 

@@ -5,8 +5,13 @@ version = "0.1.0"
 edition = "2021"
 
 [package.metadata.bundle]
-name = "Baseplate"
+name = "TheWildWest"
 identifier = "io.github.grilme99.standalonetest"
+icon = [
+    "examples/the-wild-west/assets/branding/icon.png"
+]
+version = "1.0.0"
+resources = ["examples/the-wild-west"]
 
 [workspace]
 members = ["crates/*"]

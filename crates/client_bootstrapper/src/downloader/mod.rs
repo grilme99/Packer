@@ -24,9 +24,9 @@ pub struct DownloadContext {
 }
 
 impl DownloadContext {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(root_dir: &Path) -> anyhow::Result<Self> {
         // FIXME: Eating the error like this silences any parsing errors which could be helpful.
-        let client_lock = ClientLock::get().ok();
+        let client_lock = ClientLock::get(root_dir).ok();
         log::debug!("Existing client.lock: {client_lock:?}");
 
         let client = Client::builder()
@@ -43,7 +43,12 @@ impl DownloadContext {
 
     /// Start downloading the client! This mostly branches out to OS-specific download
     /// implementations because Roblox packages the client up different for Windows and Mac.
-    pub async fn initiate_client_download(&mut self, write_to: &Path) -> anyhow::Result<()> {
+    pub async fn initiate_client_download(
+        &mut self,
+        root_dir: &Path,
+    ) -> anyhow::Result<()> {
+        let write_to = root_dir.join("client");
+
         let latest_version = self
             .get_latest_client_version()
             .await
@@ -55,11 +60,11 @@ impl DownloadContext {
 
         log::debug!("Got download paths:\n{}", download_paths.join(",\n"));
 
-        Downloader::download_files_and_write_to_path(&self.client, download_paths, write_to)
+        Downloader::download_files_and_write_to_path(&self.client, download_paths, &write_to)
             .await
             .context("Failed to download files or write to path")?;
 
-        self.update_client_lock()
+        self.update_client_lock(root_dir)
             .await
             .context("Failed to update client.lock")?;
 
@@ -101,7 +106,7 @@ impl DownloadContext {
 
     /// Update the client lock with the currently installed (latest) version of the client.
     /// This should only be called after client installation has completed.
-    pub async fn update_client_lock(&mut self) -> anyhow::Result<()> {
+    pub async fn update_client_lock(&mut self, root_dir: &Path) -> anyhow::Result<()> {
         let latest_version = self
             .get_latest_client_version()
             .await
@@ -112,7 +117,7 @@ impl DownloadContext {
         };
 
         new_lock
-            .write_lock_to_path(&new_lock)
+            .write_lock_to_path(&new_lock, root_dir)
             .context("Failed to write new ClientLock to path")?;
 
         self.client_lock = Some(new_lock);

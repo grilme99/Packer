@@ -70,7 +70,7 @@ impl GamejoinContext {
     }
 
     /// Generate the arguments passed to the Roblox Player that tell it how to start.
-    pub async fn generate_application_args(&self, place_id: &u64) -> anyhow::Result<Vec<String>> {
+    pub async fn generate_application_args(&self, place_id: &u64) -> anyhow::Result<[String; 9]> {
         let authentication_ticket = self
             .create_authentication_ticket()
             .await
@@ -83,13 +83,13 @@ impl GamejoinContext {
         let script_url = format!("https://assetgame.roblox.com/game/PlaceLauncher.ashx?request=RequestGame&browserTrackerId={tracker_id}&placeId={place_id}&isPlayTogetherGame=false");
 
         #[rustfmt::skip]
-        let application_args: Vec<String> = vec![
+        let application_args = [
             "-ticket".into(), authentication_ticket,
             "-scriptURL".into(), script_url,
             "-browserTrackerId".into(), tracker_id,
-            "-rloc".into(), "en_us".into(),
-            "-gloc".into(), "en_us".into(),
-            "-launchExp".into(), "InApp".into(), // launchExp doesn't do anything anymore. Still required.
+            "-rloc en_us".into(),
+            "-gloc en_us".into(),
+            "-launchExp InApp".into(), // launchExp doesn't do anything anymore. Still required.
         ];
 
         // TODO-Security: Application args contains auth ticket, is this safe to log?

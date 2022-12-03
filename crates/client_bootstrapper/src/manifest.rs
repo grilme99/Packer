@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::Path};
 
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
@@ -22,8 +22,8 @@ pub struct DesignConfig {
 }
 
 impl ProjectManifest {
-    pub fn get() -> anyhow::Result<ProjectManifest> {
-        let manifest_path = get_manifest_path().context("Failed to get manifest path")?;
+    pub fn get(root_dir: &Path) -> anyhow::Result<ProjectManifest> {
+        let manifest_path = root_dir.join("manifest.toml");
 
         let manifest = fs::read_to_string(&manifest_path).context(format!(
             "Failed to read manifest.toml at path {manifest_path:?}"
@@ -34,11 +34,4 @@ impl ProjectManifest {
 
         Ok(manifest)
     }
-}
-
-fn get_manifest_path() -> anyhow::Result<PathBuf> {
-    let current_dir = env::current_dir().context("Failed to get current directory")?;
-    let manifest_path = current_dir.join("manifest.toml");
-
-    Ok(manifest_path)
 }

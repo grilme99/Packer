@@ -10,16 +10,21 @@ fn main() -> anyhow::Result<()> {
     let env = Env::default().filter_or("RUST_LOG", "debug");
     env_logger::init_from_env(env);
 
-    let root = std::env::current_dir().unwrap();
+    let root = std::env::current_exe()
+        .unwrap()
+        .join("../")
+        .canonicalize()
+        .unwrap();
+
     log::info!("Root directory: {root:?}");
 
-    let manifest = ProjectManifest::get().context("Failed to get project manifest")?;
+    let manifest = ProjectManifest::get(&root).context("Failed to get project manifest")?;
 
     let (async_proc_input_tx, _async_proc_input_rx) = mpsc::channel();
     let (async_proc_output_tx, async_proc_output_rx) = mpsc::channel();
 
     // Drive the async thread
-    let client_dir = root.join("client/");
+    let client_dir = root.to_owned();
 
     let async_manifest = manifest.clone();
     thread::spawn(move || {

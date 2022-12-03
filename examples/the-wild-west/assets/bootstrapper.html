@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    @font-face {
+      font-family: 'Source Sans 3', sans-serif;
+      src: url('bootstrapper://assets/source-sans.ttf');
+    }
+
+    @keyframes fadein_content {
+      from {
+        opacity: 0;
+        margin-top: 25px;
+      }
+
+      to {
+        opacity: 1;
+        margin-top: 0;
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: translateX(-50%) rotate(0deg);
+      }
+
+      to {
+        transform: translateX(-50%) rotate(360deg);
+      }
+    }
+
+    /* Make sure nothing can be selected - makes it feel more like native UI */
+    * {
+      /* user-drag: none; */
+      -webkit-user-drag: none;
+      user-select: none;
+      -moz-user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+
+      margin: 0;
+    }
+
+    *:hover {
+      /* Don't change cursor over text or buttons */
+      cursor: default;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0);
+      font-family: 'Source Sans 3', sans-serif;
+    }
+
+    #bold {
+      font-weight: bold;
+    }
+
+    #content {
+      box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+
+      border-radius: 6px;
+      overflow: hidden;
+
+      animation: fadein_content 0.2s ease-out;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+      background-image: linear-gradient(#CEB373 0%, #A6915C 29.75%, #A6915C 51.69%, #A6915C 73.96%, #CEB373 100%);
+
+      padding: 4px;
+    }
+
+    #background {
+      width: 100%;
+      height: 100%;
+
+      position: relative;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+
+      border-radius: 4px;
+      background: radial-gradient(133.33% 100% at 50% 0%, #282E3E 0%, #13151A 100%);
+    }
+
+    #logo {
+      width: 204px;
+      height: 104px;
+
+      position: absolute;
+      left: 50%;
+      top: 25px;
+      transform: translateX(-50%) rotate(0deg);
+
+      filter: drop-shadow(0px 2px 9px rgba(0, 0, 0, 0.1));
+    }
+
+    #status {
+      width: 100%;
+      height: 61px;
+
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+
+      text-align: center;
+    }
+
+    #status h1 {
+      font-size: 24px;
+      font-weight: bold;
+      background: linear-gradient(to bottom, #D3B775, #A38D59);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+
+      stroke: #14161C;
+      stroke-width: 0.2px;
+
+      box-shadow: 2px 0px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    #status p {
+      margin-top: 12px;
+
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+
+      box-shadow: 2px 0px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    #spinner {
+      width: 48px;
+      height: 48px;
+
+      position: absolute;
+      top: 65%;
+      left: 50%;
+      transform: translateX(-50%);
+
+      filter: drop-shadow(4px 0px 4px rgba(0, 0, 0, 0.25));
+      animation: 1.8s ease-in-out 1.5s infinite spin;
+    }
+
+    #notice {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+
+      width: 100%;
+
+      color: #fff;
+      text-align: center;
+
+      padding-bottom: 4px;
+    }
+
+    #notice h1 {
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 20px;
+
+      background: linear-gradient(to bottom, #589C74, #43795B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+
+      text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    #notice h2 {
+      margin-top: 4px;
+
+      font-weight: 300;
+      font-size: 10px;
+      line-height: 17px;
+
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    #notice h3 {
+      margin-top: 2px;
+
+      font-weight: 400;
+      font-size: 8px;
+      font-style: italic;
+    }
+  </style>
+
+  <script>
+    // Disable right-click context menu on all elements.
+    document.addEventListener('contextmenu', event => event.preventDefault());
+  </script>
+</head>
+
+<body>
+  <div id="content">
+    <div id="background">
+      <img src="bootstrapper://assets/branding/logo.png" alt="Logo" id="logo" />
+
+      <div id="status">
+        <h1>Loading Game</h1>
+        <p id="status_text">{LOADING_STATUS}</p>
+      </div>
+
+      <img src="bootstrapper://assets/branding/bandit-icon.png" alt="Spinner" id="spinner">
+
+      <div id="notice">
+        <h1>- NOTICE -</h1>
+        <h2>The Wild West is <span id="bold">not</span> affiliated with this project!</h2>
+        <h3>Permission was granted by Starboard Studios to use name and logo.</h3>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTask = "CheckingForUpdates"
+    onNewTask(currentTask)
+
+    function onNewTask(task) {
+      console.log("Got new task:", task)
+
+      const statusText = getStatusText(task)
+      const element = document.getElementById("status_text")
+      element.innerText = statusText + "..."
+    }
+
+    function getStatusText(task) {
+      if (task === "CheckingForUpdates") {
+        return "Checking for Updates"
+      } else if (task === "DownloadingClient") {
+        return "Downloading Client"
+      } else if (task === "PreparingFiles") {
+        return "Preparing Files"
+      } else if (task === "LaunchingGame") {
+        return "Launching Game"
+      }
+    }
+
+    // Constantly poll for the current task from the server
+    setInterval(() => {
+      const xmlHttp = new XMLHttpRequest()
+      xmlHttp.open("GET", "bootstrapper://server/current_task", false)
+      xmlHttp.responseType = "blob"
+
+      // const bytes = new Uint8Array(xmlHttp.response)
+      // const task = new TextDecoder().decode(xmlHttp.response)
+
+      xmlHttp.onload = async () => {
+        const task = xmlHttp.getResponseHeader("x-current-task")
+        if (task !== currentTask) {
+          currentTask = task
+          onNewTask(task)
+        }
+      };
+
+      xmlHttp.send(null)
+    }, 100)
+  </script>
+</body>
+
+</html>

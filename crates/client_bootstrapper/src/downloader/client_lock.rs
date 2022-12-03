@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::Path};
 
 use anyhow::Context;
 use deploy_history::client_version_info::ClientVersionInfo;
@@ -10,8 +10,8 @@ pub struct ClientLock {
 }
 
 impl ClientLock {
-    pub fn get() -> anyhow::Result<ClientLock> {
-        let lock_path = get_lock_path().context("Failed to get lock path")?;
+    pub fn get(root_dir: &Path) -> anyhow::Result<ClientLock> {
+        let lock_path = root_dir.join("client/client.lock");
 
         let lock = fs::read_to_string(lock_path).context("Failed to read client.lock")?;
         let lock = toml::from_str::<ClientLock>(&lock)
@@ -20,8 +20,8 @@ impl ClientLock {
         Ok(lock)
     }
 
-    pub fn write_lock_to_path(&self, lock: &ClientLock) -> anyhow::Result<()> {
-        let lock_path = get_lock_path().context("Failed to get lock path")?;
+    pub fn write_lock_to_path(&self, lock: &ClientLock, root_dir: &Path) -> anyhow::Result<()> {
+        let lock_path = root_dir.join("client/client.lock");
 
         let lock =
             toml::to_string_pretty(lock).context("Failed to convert ClientLock to string")?;
@@ -30,11 +30,4 @@ impl ClientLock {
 
         Ok(())
     }
-}
-
-fn get_lock_path() -> anyhow::Result<PathBuf> {
-    let current_dir = env::current_dir().context("Failed to get current directory")?;
-    let lock_path = current_dir.join("client/client.lock");
-
-    Ok(lock_path)
 }
