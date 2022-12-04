@@ -1,4 +1,7 @@
 client/
 log/
 
+# Not included in public examples, only used for testing
+super-golf/
+
 client.lock
