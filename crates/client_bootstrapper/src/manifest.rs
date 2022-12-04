@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{fs, path::Path, process, thread};
 
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
@@ -33,5 +33,16 @@ impl ProjectManifest {
             .context("Failed to parse manifest.toml to Manifest format")?;
 
         Ok(manifest)
+    }
+}
+
+impl Drop for ProjectManifest {
+    fn drop(&mut self) {
+        log::debug!("ProjectManifest dropped");
+
+        if thread::panicking() {
+            log::error!("ProjectManifest dropped while thread was unwinding from panic. This is most likely caused by the async thread panicking.");
+            process::exit(1);
+        }
     }
 }
