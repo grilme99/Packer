@@ -27,9 +27,11 @@ At its core, a Packer application is just a custom client bootstrapper that down
 
 This project is in the works!
 
-- Windows support still needs to be added. Packer was developed on a Macbook, and I still need to pull everything down on my Windows desktop. Soontm!
+- Windows support still needs to be added. Packer was developed on a Macbook, and I still need to pull everything down on my Windows desktop to work on. Soontm!
 
 - Proper authentication flows. This is a big one, and I need to take special care to ensure everything is safe. The most likely scenario is that special authentication processes will not be included in this public repository and will only be distributed privately. Currently, Packer won't run if there isn't existing Roblox authentication in the environment.
+
+- Some kind of CLI or website to aid in creating Packer-compatible projects.
 
 # License
 
