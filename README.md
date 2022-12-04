@@ -12,6 +12,9 @@
 
 `🚧 Packer is still being worked on. Among many other things, Windows is not currently supported. See below for details. 🚧`
 
+![Packer Demonstration](.github/example.gif)
+`Packer Example. Skips downloading client to speed up video.`
+
 </div>
 
 # About
