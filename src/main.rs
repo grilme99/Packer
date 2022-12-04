@@ -1,4 +1,4 @@
-use std::thread;
+use std::{process, thread};
 
 use anyhow::{bail, Context};
 use client_bootstrapper::{
@@ -27,8 +27,12 @@ fn main() -> anyhow::Result<()> {
 
     let async_manifest = manifest.clone();
     thread::spawn(move || {
-        initiate_application_tasks(&client_dir, async_thread_send, &async_manifest)
-            .expect("async thread panicked");
+        if let Err(e) = initiate_application_tasks(&client_dir, async_thread_send, &async_manifest)
+        {
+            // Async thread errored, report error and exit application
+            log::error!("Async thread error:\n{e:?}");
+            process::exit(1);
+        }
     });
 
     let application =
