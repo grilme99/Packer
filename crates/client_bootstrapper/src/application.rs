@@ -1,13 +1,11 @@
 use std::{
     fs::{self, canonicalize},
     path::Path,
-    sync::{
-        mpsc::{Receiver, Sender},
-        Arc, Mutex,
-    },
+    sync::{Arc, Mutex},
 };
 
 use anyhow::Context;
+use crossbeam::channel::Receiver;
 use reqwest::header::{HeaderValue, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE};
 use wry::{
     application::{
@@ -45,11 +43,7 @@ impl<'a> Application<'a> {
     /// Creates the event loop and runs the application.
     ///
     /// **WARNING**: This will consume the thread it is called from.
-    pub fn run(
-        &self,
-        _input_tx: Sender<Message>,
-        output_rx: Receiver<Message>,
-    ) -> anyhow::Result<()> {
+    pub fn run(&self, async_thread_receive: Receiver<Message>) -> anyhow::Result<()> {
         let event_loop = EventLoop::<UserEvent>::with_user_event();
 
         let game_name = self.manifest.game.name.to_owned();
@@ -133,7 +127,7 @@ impl<'a> Application<'a> {
             let window = webview.window();
 
             // Poll for messages from the async thread
-            if let Ok(message) = output_rx.try_recv() {
+            if let Ok(message) = async_thread_receive.try_recv() {
                 log::debug!("Got message from async thread: {message:?}");
                 *current_task3.lock().unwrap() = message;
             }

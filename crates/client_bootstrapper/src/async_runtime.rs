@@ -1,6 +1,7 @@
-use std::{path::Path, process, sync::mpsc::Sender, time::Duration};
+use std::{path::Path, process, time::Duration};
 
 use anyhow::Context;
+use crossbeam::channel::Sender;
 use sysinfo::{System, SystemExt};
 use tokio::time::sleep;
 
@@ -32,7 +33,7 @@ impl ToString for Message {
 #[tokio::main]
 pub async fn initiate_application_tasks(
     root_dir: &Path,
-    output_tx: Sender<Message>,
+    async_thread_sender: Sender<Message>,
     manifest: &ProjectManifest,
 ) -> anyhow::Result<()> {
     log::info!("Initiated async application tasks");
@@ -42,7 +43,7 @@ pub async fn initiate_application_tasks(
     let gamejoin_context = GamejoinContext::new().context("Failed to construct GamejoinContext")?;
 
     log::info!("Checking for updates");
-    output_tx.send(Message::CheckingForUpdates)?;
+    async_thread_sender.send(Message::CheckingForUpdates)?;
 
     let download_required = download_context
         .require_client_download()
@@ -51,7 +52,7 @@ pub async fn initiate_application_tasks(
 
     if download_required {
         log::info!("Updating client");
-        output_tx.send(Message::DownloadingClient)?;
+        async_thread_sender.send(Message::DownloadingClient)?;
 
         download_context
             .initiate_client_download(root_dir)
@@ -60,7 +61,7 @@ pub async fn initiate_application_tasks(
     }
 
     log::info!("Loading game");
-    output_tx.send(Message::LaunchingGame)?;
+    async_thread_sender.send(Message::LaunchingGame)?;
 
     // Launch the game!
     let place_id = &manifest.game.place_id;
