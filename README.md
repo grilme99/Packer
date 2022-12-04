@@ -31,6 +31,15 @@ This project is in the works!
 
 - Proper authentication flows. This is a big one, and I need to take special care to ensure everything is safe. The most likely scenario is that special authentication processes will not be included in this public repository and will only be distributed privately. Currently, Packer won't run if there isn't existing Roblox authentication in the environment.
 
+# License
+
+Licensed under either of
+
+* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+* MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+
+at your option.
+
 # Prior Art
 
 - [`Roblox Studio Mod Manager`](https://github.com/MaximumADHD/Roblox-Studio-Mod-Manager) - A massive source of inspiration in designing the client bootstrapper. Much of the download-related code is borrowed from and inspired by Max's Mod Manager.
