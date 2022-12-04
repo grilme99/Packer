@@ -1,4 +1,7 @@
-use std::{path::Path, process::{Command, Stdio}};
+use std::{
+    path::Path,
+    process::{Command, Stdio},
+};
 
 use anyhow::{bail, Context};
 use rand::{thread_rng, Rng};
@@ -12,15 +15,13 @@ use crate::authentication::AuthenticationContext;
 /// Handles everything around negotiating the game joining process with Roblox (getting an authentication
 /// ticket, etc).
 #[derive(Debug)]
-pub struct GamejoinContext {
+pub struct GamejoinContext<'a> {
     client: Client,
-    auth_context: AuthenticationContext,
+    auth_context: &'a AuthenticationContext,
 }
 
-impl GamejoinContext {
-    pub fn new() -> anyhow::Result<Self> {
-        let auth_context = AuthenticationContext::new();
-
+impl<'a> GamejoinContext<'a> {
+    pub fn new(auth_context: &'a AuthenticationContext) -> anyhow::Result<Self> {
         let client = Client::builder()
             .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
             .referer(false)
@@ -36,11 +37,8 @@ impl GamejoinContext {
     pub async fn launch_roblox_client(
         &self,
         place_id: &u64,
-        client_root: &Path,
+        roblox_player: &Path,
     ) -> anyhow::Result<()> {
-        // FIXME: Assumes we're on MacOS.
-        let roblox_player = client_root.join("Contents/MacOS/RobloxPlayer");
-
         if !roblox_player.exists() {
             bail!("Can't launch the Roblox client because the player does not exist at {roblox_player:?}");
         }
@@ -65,7 +63,7 @@ impl GamejoinContext {
             .context("Failed to launch RobloxPlayer")?;
 
         drop(handle);
-        
+
         Ok(())
     }
 

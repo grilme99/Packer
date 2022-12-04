@@ -1,18 +1,24 @@
 use std::{path::Path, process, time::Duration};
 
-use anyhow::Context;
-use crossbeam::channel::Sender;
+use anyhow::{bail, Context};
+use crossbeam::channel::{Receiver, Sender};
 use sysinfo::{System, SystemExt};
 use tokio::time::sleep;
 
-use crate::{downloader::DownloadContext, gamejoin::GamejoinContext, manifest::ProjectManifest};
+use crate::{
+    authentication::AuthenticationContext, downloader::DownloadContext, gamejoin::GamejoinContext,
+    manifest::ProjectManifest,
+};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Message {
     CheckingForUpdates,
     DownloadingClient,
     PreparingFiles,
     LaunchingGame,
+
+    PromptForAuth,
+    AuthCompleted,
 }
 
 impl ToString for Message {
@@ -22,6 +28,7 @@ impl ToString for Message {
             Message::DownloadingClient => "DownloadingClient",
             Message::PreparingFiles => "PreparingFiles",
             Message::LaunchingGame => "LaunchingGame",
+            _ => "N/A",
         };
 
         str.to_string()
@@ -33,14 +40,17 @@ impl ToString for Message {
 #[tokio::main]
 pub async fn initiate_application_tasks(
     root_dir: &Path,
-    async_thread_sender: Sender<Message>,
     manifest: &ProjectManifest,
+    async_thread_sender: Sender<Message>,
+    application_thread_receiver: Receiver<Message>,
 ) -> anyhow::Result<()> {
     log::info!("Initiated async application tasks");
 
     let mut download_context =
         DownloadContext::new(root_dir).context("Failed to construct DownloadContext")?;
-    let gamejoin_context = GamejoinContext::new().context("Failed to construct GamejoinContext")?;
+    let auth_context = AuthenticationContext::new();
+    let gamejoin_context =
+        GamejoinContext::new(&auth_context).context("Failed to construct GamejoinContext")?;
 
     log::info!("Checking for updates");
     async_thread_sender.send(Message::CheckingForUpdates)?;
@@ -60,14 +70,45 @@ pub async fn initiate_application_tasks(
             .context("Failed to update client")?;
     }
 
+    // FIXME: This is coupled to MacOS.
+    let roblox_player = root_dir.join("client/RobloxPlayer.app/Contents/MacOS/RobloxPlayer");
+    if !roblox_player.exists() {
+        bail!("Roblox Player does not exist at path: {roblox_player:?}");
+    }
+
+    // Once we have a client, make sure authentication is all good
+    let already_authenticated = auth_context.already_authenticated();
+    if !already_authenticated {
+        log::info!("Authentication not available, prompting for auth");
+
+        async_thread_sender.send(Message::PromptForAuth)?;
+
+        // Wait for the application thread to tell us authentication is complete
+        while application_thread_receiver
+            .recv()
+            .is_ok_and(|message| message != Message::AuthCompleted)
+        {
+            sleep(Duration::from_secs(1)).await;
+        }
+
+        log::info!("Got authentication complete message from application");
+
+        // Ensure the cookie exists. We do't actually need it here, though.
+        // TODO: Come up with a more robust method of waiting for the cookie to be written to disk.
+        sleep(Duration::from_secs(5)).await;
+        auth_context
+            .get_webview_roblosecurity()
+            .context("Error while getting ROBLOSECURITY from WebView")?
+            .context("No cookie found in WebView storage")?;
+    }
+
     log::info!("Loading game");
     async_thread_sender.send(Message::LaunchingGame)?;
 
     // Launch the game!
     let place_id = &manifest.game.place_id;
     gamejoin_context
-        // FIXME: This is coupled to MacOS.
-        .launch_roblox_client(place_id, &root_dir.join("client/RobloxPlayer.app"))
+        .launch_roblox_client(place_id, &roblox_player)
         .await
         .context("Failed to launch Roblox client")?;
 

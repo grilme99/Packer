@@ -20,15 +20,20 @@ fn main() -> anyhow::Result<()> {
     let manifest =
         ProjectManifest::get(&root_directory).context("Failed to get project manifest")?;
 
-    let (async_thread_send, async_thread_receive) = crossbeam::channel::unbounded();
+    let (async_thread_sender, async_thread_receiver) = crossbeam::channel::unbounded();
+    let (application_thread_sender, application_thread_receiver) = crossbeam::channel::unbounded();
 
     // Drive the async thread
     let client_dir = root_directory.to_owned();
 
     let async_manifest = manifest.clone();
     thread::spawn(move || {
-        if let Err(e) = initiate_application_tasks(&client_dir, async_thread_send, &async_manifest)
-        {
+        if let Err(e) = initiate_application_tasks(
+            &client_dir,
+            &async_manifest,
+            async_thread_sender,
+            application_thread_receiver,
+        ) {
             // Async thread errored, report error and exit application
             log::error!("Async thread error:\n{e:?}");
             process::exit(1);
@@ -39,7 +44,7 @@ fn main() -> anyhow::Result<()> {
         Application::new(&root_directory, &manifest).context("Failed to create project")?;
 
     application
-        .run(async_thread_receive)
+        .run(async_thread_receiver, application_thread_sender)
         .context("Failed to create and run application")?;
 
     // Nothing can run beyond this point. The main thread is consumed by the event loop.

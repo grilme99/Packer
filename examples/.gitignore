@@ -1,5 +1,6 @@
 client/
 log/
+temp/
 
 # Not included in public examples, only used for testing
 super-golf/

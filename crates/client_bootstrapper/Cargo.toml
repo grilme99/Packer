@@ -6,9 +6,11 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.66"
 async-trait = "0.1.58"
+byteorder = "1.4.3"
 cookie = "0.16.1"
 crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
 deploy_history = { path = "../deploy_history" }
+dirs = "4.0.0"
 futures = "0.3.25"
 log = "0.4.17"
 mime_guess = "2.0.4"

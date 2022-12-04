@@ -1,4 +1,5 @@
 #![feature(int_roundings)]
+#![feature(is_some_and)]
 
 pub mod application;
 pub mod async_runtime;

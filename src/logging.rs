@@ -12,7 +12,7 @@ use log4rs::{
 };
 
 pub fn init_logging(root_dir: &Path) -> anyhow::Result<Handle> {
-    let level = log::LevelFilter::Info;
+    let level = log::LevelFilter::Debug;
 
     let log_dir = root_dir.join("log");
     if !log_dir.exists() {
