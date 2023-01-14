@@ -25,10 +25,8 @@ use wry::{
 
 use crate::{async_runtime::Message, manifest::ProjectManifest};
 
-const AUTH_WEBVIEW_INIT_SCRIPT: &str = "window.addEventListener(\"load\", () => {
-    document.body.classList.remove(\"light-theme\");
-    document.body.classList.add(\"dark-theme\");
-});";
+const AUTH_WEBVIEW_INIT_SCRIPT: &str = include_str!("../resources/js/auth_webview_hook.js");
+const BOOTSTRAPPER_SDK: &str = include_str!("../resources/js/bootstrapper_sdk.js");
 
 #[derive(Debug)]
 enum UserEvent {
@@ -116,6 +114,14 @@ impl<'a> Application<'a> {
                         .header(CONTENT_TYPE, "text/plain")
                         .header("x-current-task", current_task.as_str())
                         .body(vec![])
+                        .map_err(Into::into);
+                }
+
+                if name == "bootstrapper_sdk.js" {
+                    return Response::builder()
+                        .header(CONTENT_TYPE, "text/javascript")
+                        .header(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"))
+                        .body(BOOTSTRAPPER_SDK.as_bytes().to_vec())
                         .map_err(Into::into);
                 }
 
@@ -227,23 +233,23 @@ impl<'a> Application<'a> {
 
         let window_id = window.id();
 
-        let navigation_handler = move |path: String| {
-            log::debug!("Authentication webview navigated to: {path}");
+        // let navigation_handler = move |path: String| {
+        //     log::debug!("Authentication webview navigated to: {path}");
 
-            if path.ends_with("home") {
-                // We've successfully logged in!
-                log::info!("Authentication webview navigated to home, authentication successful");
+        //     if path.ends_with("home") {
+        //         // We've successfully logged in!
+        //         log::info!("Authentication webview navigated to home, authentication successful");
 
-                proxy.send_event(UserEvent::AuthCompleted).unwrap();
-                application_thread_sender
-                    .send(Message::AuthCompleted)
-                    .unwrap();
+        //         proxy.send_event(UserEvent::AuthCompleted).unwrap();
+        //         application_thread_sender
+        //             .send(Message::AuthCompleted)
+        //             .unwrap();
 
-                return false;
-            }
+        //         return false;
+        //     }
 
-            true
-        };
+        //     true
+        // };
 
         let webview = WebViewBuilder::new(window)
             .context("Failed to create webview builder")?
@@ -254,10 +260,13 @@ impl<'a> Application<'a> {
             .with_clipboard(true)
             .with_accept_first_mouse(true)
             .with_web_context(web_context)
-            .with_navigation_handler(navigation_handler)
+            // .with_navigation_handler(navigation_handler)
+            .with_devtools(true)
             .with_initialization_script(AUTH_WEBVIEW_INIT_SCRIPT)
             .build()
             .context("Failed to build webview")?;
+
+        webview.open_devtools();
 
         Ok((window_id, webview))
     }

@@ -230,13 +230,19 @@
     </div>
   </div>
 
+  <script src="bootstrapper://core/bootstrapper_sdk.js"></script>
+
   <script>
-    let currentTask = "CheckingForUpdates"
-    onNewTask(currentTask)
+    const STARTING_TASK = "CheckingForUpdates"
+
+    let bootstrapper = new Bootstrapper(STARTING_TASK)
+    onNewTask(STARTING_TASK)
+
+    bootstrapper.addEventListener("NewTask", () => {
+      onNewTask(bootstrapper.getCurrentTask())
+    })
 
     function onNewTask(task) {
-      console.log("Got new task:", task)
-
       const statusText = getStatusText(task)
       const element = document.getElementById("status_text")
       element.innerText = statusText + "..."
@@ -253,26 +259,6 @@
         return "Launching Game"
       }
     }
-
-    // Constantly poll for the current task from the server
-    setInterval(() => {
-      const xmlHttp = new XMLHttpRequest()
-      xmlHttp.open("GET", "bootstrapper://server/current_task", false)
-      xmlHttp.responseType = "blob"
-
-      // const bytes = new Uint8Array(xmlHttp.response)
-      // const task = new TextDecoder().decode(xmlHttp.response)
-
-      xmlHttp.onload = async () => {
-        const task = xmlHttp.getResponseHeader("x-current-task")
-        if (task !== currentTask) {
-          currentTask = task
-          onNewTask(task)
-        }
-      };
-
-      xmlHttp.send(null)
-    }, 100)
   </script>
 </body>
 
